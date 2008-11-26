@@ -1,0 +1,24 @@
+= PolymorphicIncludes
+
+Allows you to specify per-class includes for polymorphic belongs_to associations.
+
+
+= Example
+  class Group < ActiveRecord::Base
+    has_many :group_groupables
+    has_many :grouped_projects, :conditions => {:groupable_type => 'Project'}, :include => :groupable, :class_name => 'GroupGroupable'
+  end
+  
+  class GroupGroupable < ActiveRecord::Base
+    belongs_to :group
+    belongs_to :groupable, :polymorphic => { :class_includes => {'Project' => {:shots => :tasks}} }
+  end
+  
+  Group.first.grouped_projects
+  
+  ~   GroupGroupable Load (0.3ms)   SELECT * FROM "group_groupables" WHERE ("group_groupables".group_id = 10 AND ("group_groupables"."groupable_type" = E'Project')) 
+  ~   Project Load (0.6ms)   SELECT * FROM "projects" WHERE ("projects"."id" IN (3,4))
+  ~   Shot Load (1.2ms)   SELECT "shots".* FROM "shots" WHERE ("shots".project_id IN (3,4)) 
+  ~   Task Load (29.0ms)   SELECT "tasks".* FROM "tasks" WHERE ("tasks".shot_id IN (235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252...))
+
+Copyright (c) 2008 Lachie Cox, released under the MIT license
